@@ -1,18 +1,42 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bolo Max</title><style>
-body{margin:0;background:#07112d;color:#f5f7ff;font-family:system-ui,sans-serif}header{padding:20px;background:#0b1736;border-bottom:1px solid #304166}h1{margin:0}main{max-width:720px;margin:auto;padding:16px}.card{background:#13244b;border:1px solid #304166;border-radius:18px;padding:16px;margin:12px 0}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}button{border:0;border-radius:13px;padding:13px;background:#167fc1;color:white;font-weight:bold;font-size:15px}input{box-sizing:border-box;width:100%;padding:14px;border-radius:12px;background:#101b3a;color:white;border:1px solid #41547d;font-size:16px;margin:6px 0}.bubble{padding:12px 14px;border-radius:16px;margin:9px 0;max-width:90%;white-space:pre-wrap;overflow-wrap:anywhere}.bot{background:#14244a}.user{background:#5144b8;margin-left:auto}.small{font-size:12px;color:#b9c5e2;line-height:1.5}</style></head><body>
-<header><h1>🎙️ Bolo Max</h1><div>Hindi + English assistant demo</div></header><main>
+body{margin:0;background:#07112d;color:#f5f7ff;font-family:system-ui,sans-serif}header{padding:20px;background:#0b1736;border-bottom:1px solid #304166}h1{margin:0}main{max-width:720px;margin:auto;padding:20px}.card{background:#0f1b2e;padding:20px;border-radius:8px;margin-bottom:20px;border-left:3px solid #00d4ff}.actions{display:flex;gap:10px;margin-bottom:20px}button{padding:10px 15px;background:#1e3a5f;color:#00d4ff;border:1px solid #00d4ff;border-radius:5px;cursor:pointer;font-weight:bold}button:hover{background:#00d4ff;color:#07112d}#chat{background:#0a1428;padding:15px;border-radius:8px;margin-bottom:20px;max-height:400px;overflow-y:auto}.bubble{padding:10px 15px;margin-bottom:10px;border-radius:8px;word-wrap:break-word}.bubble.user{background:#1e3a5f;text-align:right;margin-left:40px}.bubble.bot{background:#0f5f4f;margin-right:40px}form{display:flex;gap:10px}#msg{flex:1;padding:10px;background:#0f1b2e;color:#f5f7ff;border:1px solid #304166;border-radius:5px}#status{font-size:12px;color:#7d8fa3;margin-top:10px}.small{font-size:13px;color:#a0afc0}
+</style></head><body><header><h1>🎙️ Bolo Max</h1><div>Hindi + English assistant demo</div></header><main>
 <div class="card"><h2>Namaste! 👋</h2>Type a message or try voice input below.</div>
-<div class="actions"><button onclick="voice()">🎤 Speak</button><button onclick="readReply()">🔊 Read reply</button><button onclick="document.getElementById('pic').click()">📷 Choose image</button><button onclick="alarm()">🚨 Test alarm</button></div>
+<div class="actions"><button onclick="voice()">🎤 Speak</button><button onclick="readReply()">🔊 Read reply</button><button onclick="document.getElementById('pic').click()">📷 Choose image</button><button onclick="alarm()">🚨 Alarm</button></div>
 <input id="pic" type="file" accept="image/*" capture="environment" hidden onchange="picked(event)">
 <div id="status" class="small">Ready.</div><div id="chat"><div class="bubble bot">Namaste! Aap kya poochna chahte hain?</div></div>
 <form onsubmit="send(event)"><input id="msg" placeholder="Yahan message likho..." autocomplete="off"><button type="submit">Send ➤</button></form>
-<p class="small">Starter demo only: real AI, WhatsApp, OCR and background anti-theft monitoring are not connected yet. Alarm plays only when you press the button. Do not put private API keys in this page.</p></main>
+<p class="small">Starter demo only: real AI, WhatsApp, OCR and background anti-theft monitoring are not connected yet. Alarm plays only when you press the button. Do not put private API keys in this demo.</p></main>
 <script>
 let last='Namaste! Abhi Bolo Max demo mode mein hai.';
 function bubble(t,c){let d=document.createElement('div');d.className='bubble '+c;d.textContent=t;document.getElementById('chat').appendChild(d);}
-function send(e){e.preventDefault();let i=document.getElementById('msg'),t=i.value.trim();if(!t)return;i.value='';bubble(t,'user');last='Aapka message mil gaya. Abhi demo mode hai; real AI answers ke liye secure backend connect karna hoga.';setTimeout(()=>bubble(last,'bot'),200);}
-function voice(){let S=window.SpeechRecognition||window.webkitSpeechRecognition;if(!S){document.getElementById('status').textContent='Voice input unsupported; try Chrome.';return}let r=new S();r.lang='hi-IN';r.onstart=()=>document.getElementById('status').textContent='Listening… bolo';r.onresult=e=>{document.getElementById('msg').value=e.results[0][0].transcript;document.getElementById('status').textContent='Voice captured. Send dabao.'};r.onerror=()=>document.getElementById('status').textContent='Microphone permission check karo.';r.start();}
+async function send(e){
+  e.preventDefault();
+  const i=document.getElementById('msg');
+  const t=i.value.trim();
+  if(!t)return;
+  i.value='';
+  bubble(t,'user');
+  document.getElementById('status').textContent='AI se jawab aa raha hai...';
+
+  try{
+    const r=await fetch('https://bolo-max-backend.onrender.com/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:t})
+    });
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||'Backend error');
+    last=data.reply||'Jawab nahi mila.';
+    bubble(last,'bot');
+    document.getElementById('status').textContent='AI connected';
+  }catch(err){
+    bubble('Backend connection error: '+err.message,'bot');
+    document.getElementById('status').textContent='Connection failed';
+  }
+}
+function voice(){let S=window.SpeechRecognition||window.webkitSpeechRecognition;if(!S){document.getElementById('status').textContent='Voice input unsupported; try Chrome.';return}let r=new S();r.lang='hi-IN';r.onresult=function(e){let t=e.results[e.results.length-1][0].transcript;document.getElementById('msg').value=t};r.start();}
 function readReply(){if(!speechSynthesis){alert('Text-to-speech not supported');return}let u=new SpeechSynthesisUtterance(last);u.lang='hi-IN';speechSynthesis.cancel();speechSynthesis.speak(u);}
 function picked(e){if(e.target.files[0]){bubble('Image selected: '+e.target.files[0].name,'user');bubble('Image selection works, but OCR/image understanding is not connected yet.','bot')}}
-function alarm(){let A=window.AudioContext||window.webkitAudioContext;if(!A){alert('Audio not supported');return}let c=new A(),o=c.createOscillator(),g=c.createGain(),n=0;o.type='sawtooth';o.frequency.value=900;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();let id=setInterval(()=>{o.frequency.value=n%2?650:1050;n++;if(n>7){clearInterval(id);o.stop();c.close()}},250)}
+function alarm(){let A=window.AudioContext||window.webkitAudioContext;if(!A){alert('Audio not supported');return}let c=new A(),o=c.createOscillator(),g=c.createGain(),n=0;o.type='sawtooth';o.frequency.value=800;g.gain.setValueAtTime(.3,c.currentTime);o.connect(g);g.connect(c.destination);o.start(c.currentTime);setTimeout(()=>{o.stop(c.currentTime)},500);}
 </script></body></html>
