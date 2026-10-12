@@ -17,22 +17,21 @@ async function send(e){
   if(!t)return;
   i.value='';
   bubble(t,'user');
-  document.getElementById('status').textContent='AI se jawab aa raha hai...';
+  const status=document.getElementById('status');
+  status.textContent='AI se jawab aa raha hai...';
 
   try{
-    const r=await fetch('https://bolo-max-backend.onrender.com/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:t})
-    });
-    const data=await r.json();
-    if(!r.ok) throw new Error(data.error||'Backend error');
+    const r=await fetch('https://bolo-max-backend.onrender.com/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
+    const text=await r.text();
+    let data={};
+    try{ data=text?JSON.parse(text):{}; }catch{ throw new Error(text || 'Unexpected backend response'); }
+    if(!r.ok) throw new Error(data.error||data.message||'Backend error');
     last=data.reply||'Jawab nahi mila.';
     bubble(last,'bot');
-    document.getElementById('status').textContent='AI connected';
+    status.textContent='AI connected';
   }catch(err){
     bubble('Backend connection error: '+err.message,'bot');
-    document.getElementById('status').textContent='Connection failed';
+    status.textContent='Connection failed';
   }
 }
 function voice(){let S=window.SpeechRecognition||window.webkitSpeechRecognition;if(!S){document.getElementById('status').textContent='Voice input unsupported; try Chrome.';return}let r=new S();r.lang='hi-IN';r.onresult=function(e){let t=e.results[e.results.length-1][0].transcript;document.getElementById('msg').value=t};r.start();}
