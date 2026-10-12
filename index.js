@@ -1,5 +1,10 @@
 const http = require("http");
 
+const getGroqApiKey = () => {
+  const key = process.env.GROQ_API_KEY || process.env.GROQ_KEY || process.env.GROQ_SECRET;
+  return typeof key === "string" ? key.trim() : "";
+};
+
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -20,19 +25,33 @@ const server = http.createServer(async (req, res) => {
 
   if (req.url === "/chat" && req.method === "POST") {
     try {
-      if (!process.env.GROQ_API_KEY) {
-        throw new Error("GROQ_API_KEY is missing in Render");
+      const groqApiKey = getGroqApiKey();
+      if (!groqApiKey) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({
+          error: "GROQ_API_KEY is missing or empty in Render environment"
+        }));
       }
 
       let body = "";
       for await (const chunk of req) body += chunk;
 
-      const data = JSON.parse(body);
-      if (!data.message || typeof data.message !== "string") {
+      if (!body.trim()) {
         res.writeHead(400, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({
-          error: "Please send a message"
-        }));
+        return res.end(JSON.stringify({ error: "Request body is empty" }));
+      }
+
+      let data;
+      try {
+        data = JSON.parse(body);
+      } catch {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "Invalid JSON body" }));
+      }
+
+      if (!data.message || typeof data.message !== "string" || !data.message.trim()) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: "Please send a message" }));
       }
 
       const response = await fetch(
@@ -40,7 +59,7 @@ const server = http.createServer(async (req, res) => {
         {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+            Authorization: `Bearer ${groqApiKey}`,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
@@ -56,12 +75,18 @@ const server = http.createServer(async (req, res) => {
         }
       );
 
-      const result = await response.json();
+      const responseText = await response.text();
+      let result = {};
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        result = {};
+      }
+
       if (!response.ok) {
+        const groqError = result.error?.message || result.message || "Groq API request failed";
         res.writeHead(502, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({
-          error: result.error?.message || "Groq API request failed"
-        }));
+        return res.end(JSON.stringify({ error: groqError }));
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -69,8 +94,9 @@ const server = http.createServer(async (req, res) => {
         reply: result.choices?.[0]?.message?.content || "No reply received"
       }));
     } catch (error) {
+      const message = error?.message || "Unknown server error";
       res.writeHead(500, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ error: error.message }));
+      return res.end(JSON.stringify({ error: message }));
     }
   }
 
