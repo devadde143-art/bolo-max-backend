@@ -1,0 +1,13 @@
+
+{
+  "name": "bolo-max-backend",
+  "version": "1.0.0",
+  "description": "Bolo Max AI assistant backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
