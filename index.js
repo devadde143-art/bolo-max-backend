@@ -22,7 +22,13 @@ const server = http.createServer(async (req, res) => {
       status: "Backend running"
     }));
   }
-
+if (req.url === "/vision" && req.method === "GET") {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  return res.end(JSON.stringify({
+    feature: "Camera Vision",
+    status: "Ready for setup"
+  }));
+}
   if (req.url === "/chat" && req.method === "POST") {
     try {
       const groqApiKey = getGroqApiKey();
