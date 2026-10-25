@@ -53,7 +53,11 @@ function voice(){
   };
   r.start();
 }
-function readReply(){if(!speechSynthesis){alert('Text-to-speech not supported');return}let u=new SpeechSynthesisUtterance(last);u.lang='hi-IN';speechSynthesis.cancel();speechSynthesis.speak(u);}
+function readReply(){if(!speechSynthesis){alert('Text-to-speech not supported');return}let u=new SpeechSynthesisUtterance(last);u.lang='hi-IN';speechSynthesis.cancel();speechSynthesis.speak(u)u.onend = startListeningAgain;;}function startListeningAgain(){
+  setTimeout(function(){
+    voice();
+  }, 1000);
+}
 function picked(e){if(e.target.files[0]){bubble('Image selected: '+e.target.files[0].name,'user');bubble('Image selection works, but OCR/image understanding is not connected yet.','bot')}}
 function alarm(){let A=window.AudioContext||window.webkitAudioContext;if(!A){alert('Audio not supported');return}let c=new A(),o=c.createOscillator(),g=c.createGain(),n=0;o.type='sawtooth';o.frequency.value=800;g.gain.setValueAtTime(.3,c.currentTime);o.connect(g);g.connect(c.destination);o.start(c.currentTime);setTimeout(()=>{o.stop(c.currentTime)},500);}
 </script></body></html>
