@@ -21,7 +21,7 @@ async function send(e){
   status.textContent='AI se jawab aa raha hai...';
 
   try{
-    const r=await fetch('https://bolo-max-backend.onrender.com/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
+    const r=await fetch('https://bolo-max-backend-1.onrender.com/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
     const text=await r.text();
     let data={};
     try{ data=text?JSON.parse(text):{}; }catch{ throw new Error(text || 'Unexpected backend response'); }
