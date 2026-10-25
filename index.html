@@ -77,6 +77,25 @@ function startListeningAgain(){
   }, 1000);
 }
   
-function picked(e){if(e.target.files[0]){bubble('Image selected: '+e.target.files[0].name,'user');bubble('Image selection works, but OCR/image understanding is not connected yet.','bot')}}
+function picked(e)
+  
+async function openCameraVision(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.setAttribute('capture', 'environment');
+
+  input.onchange = async function(){
+    if(!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    bubble('Photo selected: ' + file.name, 'user');
+    bubble('Photo ko samajhne ke liye image AI connection agle step mein jodenge.', 'bot');
+  };
+
+  input.click();
+}
+  
+{if(e.target.files[0]){bubble('Image selected: '+e.target.files[0].name,'user');bubble('Image selection works, but OCR/image understanding is not connected yet.','bot')}}
 function alarm(){let A=window.AudioContext||window.webkitAudioContext;if(!A){alert('Audio not supported');return}let c=new A(),o=c.createOscillator(),g=c.createGain(),n=0;o.type='sawtooth';o.frequency.value=800;g.gain.setValueAtTime(.3,c.currentTime);o.connect(g);g.connect(c.destination);o.start(c.currentTime);setTimeout(()=>{o.stop(c.currentTime)},500);}
 </script></body></html>
