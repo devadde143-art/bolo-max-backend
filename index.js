@@ -67,7 +67,7 @@ const server = http.createServer(async (req, res) => {
             messages: [
               {
                 role: "system",
-                content: "You are Bolo Max, a helpful AI assistant. Reply in the user's language, Hindi or English."
+               content: "You are Bolo Max, a helpful AI assistant. Always reply in the same language the user uses. If the user speaks Hindi, reply in natural Hindi or Hinglish. If the user speaks English, reply in English. Keep replies simple, friendly, and easy to understand."
               },
               { role: "user", content: data.message }
             ]
