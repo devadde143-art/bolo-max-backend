@@ -1,101 +1,216 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bolo Max</title><style>
-body{margin:0;background:#07112d;color:#f5f7ff;font-family:system-ui,sans-serif}header{padding:20px;background:#0b1736;border-bottom:1px solid #304166}h1{margin:0}main{max-width:720px;margin:auto;padding:20px}.card{background:#0f1b2e;padding:20px;border-radius:8px;margin-bottom:20px;border-left:3px solid #00d4ff}.actions{display:flex;gap:10px;margin-bottom:20px}button{padding:10px 15px;background:#1e3a5f;color:#00d4ff;border:1px solid #00d4ff;border-radius:5px;cursor:pointer;font-weight:bold}button:hover{background:#00d4ff;color:#07112d}#chat{background:#0a1428;padding:15px;border-radius:8px;margin-bottom:20px;max-height:400px;overflow-y:auto}.bubble{padding:10px 15px;margin-bottom:10px;border-radius:8px;word-wrap:break-word}.bubble.user{background:#1e3a5f;text-align:right;margin-left:40px}.bubble.bot{background:#0f5f4f;margin-right:40px}form{display:flex;gap:10px}#msg{flex:1;padding:10px;background:#0f1b2e;color:#f5f7ff;border:1px solid #304166;border-radius:5px}#status{font-size:12px;color:#7d8fa3;margin-top:10px}.small{font-size:13px;color:#a0afc0}
-</style></head><body><header><h1>🎙️ Bolo Max</h1><div>Hindi + English assistant demo</div></header><main>
-<div class="card"><h2>Namaste! 👋</h2>Type a message or try voice input below.</div>
-<div class="actions"><button onclick="voice()">🎤 Speak</button><button onclick="readReply()">🔊 Read reply</button><button onclick="document.getElementById('pic').click()">📷 Choose image</button><button onclick="alarm()">🚨 Alarm</button></div>
-<input id="pic" type="file" accept="image/*" capture="environment" hidden onchange="picked(event)">
-<div id="status" class="small">Ready.</div><div id="chat"><div class="bubble bot">Namaste! Aap kya poochna chahte hain?</div></div>
-<form onsubmit="send(event)"><input id="msg" placeholder="Yahan message likho..." autocomplete="off"><button type="submit">Send ➤</button></form>
-<p class="small">Starter demo only: real AI, WhatsApp, OCR and background anti-theft monitoring are not connected yet. Alarm plays only when you press the button. Do not put private API keys in this demo.</p></main>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07142f">
+<title>Bolo Max — Hindi + English AI</title>
+<style>
+:root{color-scheme:dark;--bg:#07142f;--panel:#101f42;--line:#293c66;--text:#f4f7ff;--muted:#b7c4e2;--accent:#69a7ff}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(160deg,#07142f,#101b39);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+main{width:min(760px,100%);margin:auto;padding:18px 14px 28px}
+header{padding:12px 4px 18px}
+h1{margin:0;font-size:30px;letter-spacing:.3px}
+header p{margin:6px 0;color:var(--muted)}
+.status{font-size:13px;color:#b7d5ff;background:#14274e;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:12px}
+.panel{background:rgba(16,31,66,.94);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:14px}
+#chat{height:42vh;min-height:240px;max-height:440px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:4px}
+.bubble{max-width:90%;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:14px;padding:11px 13px;line-height:1.45}
+.bot{align-self:flex-start;background:#1b2c53}
+.user{align-self:flex-end;background:#245da5}
+label{display:block;color:var(--muted);font-size:13px;margin:4px 0 8px}
+textarea,input{width:100%;background:#081632;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}
+textarea{min-height:76px;resize:vertical}
+button{border:0;border-radius:12px;padding:11px 14px;background:var(--accent);color:#07142f;font-weight:700;font-size:15px;cursor:pointer}
+button.secondary{background:#26395f;color:var(--text);border:1px solid var(--line)}
+button:disabled{opacity:.55}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.row button{flex:1}
+.small{font-size:12px;color:var(--muted);line-height:1.45}
+#preview{display:none;width:100%;max-height:280px;object-fit:contain;margin-top:10px;border-radius:12px;background:#081632}
+@media(max-width:420px){h1{font-size:26px}.row button{min-width:42%}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>🗣️ Bolo Max</h1>
+<p>Hindi + English AI Assistant</p>
+<div class="status" id="status">Connecting to Bolo Max…</div>
+</header>
+
+<section class="panel">
+<div id="chat" aria-live="polite">
+<div class="bubble bot">Namaste! 👋 Main Bolo Max hoon. Hindi ya English mein message bhejiye, ya Speak button dabaiye.</div>
+</div>
+<form id="chatForm">
+<label for="msg">Apna message likhein</label>
+<textarea id="msg" placeholder="Yahan message likhein…" required></textarea>
+<div class="row">
+<button id="sendBtn" type="submit">Send</button>
+<button class="secondary" type="button" id="speakBtn">🎙️ Speak</button>
+<button class="secondary" type="button" id="readBtn">🔊 Read reply</button>
+</div>
+</form>
+</section>
+
+<section class="panel">
+<h2 style="font-size:19px;margin:0 0 8px">📷 Camera Vision</h2>
+<p class="small">Photo choose karein ya camera se lein. Bolo Max image describe karne aur visible text padhne ki koshish karega. Is feature ke liye Groq account par supported vision model access hona chahiye.</p>
+<label for="imageFile">Photo choose / camera</label>
+<input id="imageFile" type="file" accept="image/*" capture="environment">
+<img id="preview" alt="Selected photo preview">
+<label for="visionPrompt" style="margin-top:12px">Photo ke baare mein kya poochna hai?</label>
+<input id="visionPrompt" value="Is photo ko simple Hindi mein describe karo aur visible text padho.">
+<div class="row"><button id="visionBtn" type="button">Analyze photo</button></div>
+</section>
+<p class="small">Privacy: Chat messages and selected photos are sent to your configured backend and AI provider for processing. Do not upload passwords, IDs, or private medical documents.</p>
+</main>
 <script>
-let last='Namaste! Abhi Bolo Max demo mode mein hai.';
-function bubble(t,c){let d=document.createElement('div');d.className='bubble '+c;d.textContent=t;document.getElementById('chat').appendChild(d);}
-async function send(e){
-  e.preventDefault();
-  const i=document.getElementById('msg');
-  const t=i.value.trim();
-  if(!t)return;
-  i.value='';
-  bubble(t,'user');
-  const status=document.getElementById('status');
-  status.textContent='AI se jawab aa raha hai...';
+const API = window.location.origin;
+const statusEl = document.getElementById('status');
+const chatEl = document.getElementById('chat');
+const msgEl = document.getElementById('msg');
+const sendBtn = document.getElementById('sendBtn');
+const imageFile = document.getElementById('imageFile');
+const preview = document.getElementById('preview');
+let lastReply = '';
+let selectedImage = '';
 
-  try{
-    const r=await fetch('https://bolo-max-backend-1.onrender.com/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
-    const text=await r.text();
-    let data={};
-    try{ data=text?JSON.parse(text):{}; }catch{ throw new Error(text || 'Unexpected backend response'); }
-    if(!r.ok) throw new Error(data.error||data.message||'Backend error');
-    last=data.reply||'Jawab nahi mila.';
-    bubble(last,'bot');
-    status.textContent='AI connected';
-  }catch(err){
-    bubble('Backend connection error: '+err.message,'bot');
-    status.textContent='Connection failed';
+function bubble(text, who='bot') {
+  const el = document.createElement('div');
+  el.className = `bubble ${who}`;
+  el.textContent = text;
+  chatEl.appendChild(el);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Backend error');
+    statusEl.textContent = d.apiKeyConfigured
+      ? 'Backend connected • API key detected'
+      : 'Backend connected • GROQ_API_KEY is missing in Render';
+  } catch (e) {
+    statusEl.textContent = 'Backend connection failed: ' + e.message;
   }
 }
-function voice(){
-  let S = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!S){
-    document.getElementById('status').textContent = 'Voice input unsupported; try Chrome.';
+async function send(event) {
+  if (event) event.preventDefault();
+  const message = msgEl.value.trim();
+  if (!message) return;
+  bubble(message, 'user');
+  msgEl.value = '';
+  sendBtn.disabled = true;
+  statusEl.textContent = 'Bolo Max is thinking…';
+  try {
+    const r = await fetch(`${API}/chat`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message})
+    });
+    const raw = await r.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; }
+    catch { throw new Error(raw || 'Unexpected backend response'); }
+    if (!r.ok) throw new Error(data.error || data.message || `Backend error (${r.status})`);
+    lastReply = data.reply || 'Jawab nahi mila.';
+    bubble(lastReply, 'bot');
+    statusEl.textContent = 'AI connected';
+  } catch (e) {
+    bubble('Backend connection error: ' + e.message, 'bot');
+    statusEl.textContent = 'Connection failed';
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+document.getElementById('chatForm').addEventListener('submit', send);
+
+function speakText(text) {
+  if (!('speechSynthesis' in window)) {
+    statusEl.textContent = 'Text-to-speech is not supported in this browser.';
     return;
   }
-  let r = new S();
-  r.lang = 'hi-IN';
-  r.onresult = async function(e){
-    let t = e.results[e.results.length-1][0].transcript;
-    document.getElementById('msg').value = t;
-    await send({preventDefault:()=>{}});
-    readReply();
-  };
-  r.onerror = function(){
-    document.getElementById('status').textContent = 'Microphone error. Please try again.';
-  };
-  r.start();
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = /[a-z]/i.test(text) && !/[ऀ-ॿ]/.test(text) ? 'en-IN' : 'hi-IN';
+  window.speechSynthesis.speak(utterance);
 }
-
-function readReply(){
-  if(!window.speechSynthesis){
-    alert('Text-to-speech not supported');
+document.getElementById('readBtn').addEventListener('click', () => {
+  if (lastReply) speakText(lastReply);
+  else statusEl.textContent = 'Pehle Bolo Max se message bhejiye.';
+});
+document.getElementById('speakBtn').addEventListener('click', () => {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    statusEl.textContent = 'Voice input supported nahi hai. Android Chrome mein try karein.';
     return;
   }
-
-  let u = new SpeechSynthesisUtterance(last);
-  u.lang = 'hi-IN';
-
-  u.onend = function(){
-    startListeningAgain();
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'hi-IN';
+  recognition.onresult = async e => {
+    msgEl.value = e.results[e.results.length - 1][0].transcript;
+    await send();
+    if (lastReply) speakText(lastReply);
   };
-
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-}
-
-function startListeningAgain(){
-  setTimeout(function(){
-    voice();
-  }, 1000);
-}
-  
-function picked(e)
-  
-async function openCameraVision(){
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.setAttribute('capture', 'environment');
-
-  input.onchange = async function(){
-    if(!input.files || !input.files[0]) return;
-
-    const file = input.files[0];
-    bubble('Photo selected: ' + file.name, 'user');
-    bubble('Photo ko samajhne ke liye image AI connection agle step mein jodenge.', 'bot');
+  recognition.onerror = () => statusEl.textContent = 'Microphone error. Chrome permission check karein.';
+  recognition.start();
+});
+imageFile.addEventListener('change', () => {
+  const file = imageFile.files && imageFile.files[0];
+  if (!file) { selectedImage = ''; preview.style.display = 'none'; return; }
+  if (!file.type.startsWith('image/')) {
+    statusEl.textContent = 'Please choose an image file.';
+    imageFile.value = '';
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    statusEl.textContent = 'Photo 5 MB se chhoti choose karein.';
+    imageFile.value = '';
+    selectedImage = '';
+    preview.style.display = 'none';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    selectedImage = reader.result;
+    preview.src = selectedImage;
+    preview.style.display = 'block';
   };
-
-  input.click();
-}
-  
-{if(e.target.files[0]){bubble('Image selected: '+e.target.files[0].name,'user');bubble('Image selection works, but OCR/image understanding is not connected yet.','bot')}}
-function alarm(){let A=window.AudioContext||window.webkitAudioContext;if(!A){alert('Audio not supported');return}let c=new A(),o=c.createOscillator(),g=c.createGain(),n=0;o.type='sawtooth';o.frequency.value=800;g.gain.setValueAtTime(.3,c.currentTime);o.connect(g);g.connect(c.destination);o.start(c.currentTime);setTimeout(()=>{o.stop(c.currentTime)},500);}
-</script></body></html>
+  reader.readAsDataURL(file);
+});
+document.getElementById('visionBtn').addEventListener('click', async () => {
+  if (!selectedImage) { statusEl.textContent = 'Pehle photo choose karein.'; return; }
+  const btn = document.getElementById('visionBtn');
+  btn.disabled = true;
+  statusEl.textContent = 'Photo analyze ho rahi hai…';
+  try {
+    const r = await fetch(`${API}/vision`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        image: selectedImage,
+        prompt: document.getElementById('visionPrompt').value.trim()
+      })
+    });
+    const raw = await r.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; }
+    catch { throw new Error(raw || 'Unexpected backend response'); }
+    if (!r.ok) throw new Error(data.error || `Vision error (${r.status})`);
+    lastReply = data.reply || 'Image ka jawab nahi mila.';
+    bubble('📷 ' + lastReply, 'bot');
+    statusEl.textContent = 'Camera Vision complete';
+  } catch (e) {
+    bubble('Camera Vision error: ' + e.message, 'bot');
+    statusEl.textContent = 'Camera Vision failed';
+  } finally {
+    btn.disabled = false;
+  }
+});
+checkHealth();
+</script>
+</body>
+</html>
